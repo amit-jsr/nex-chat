@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..config import settings
 from ..llm import get_embeddings, get_utility_model
 from ..models import Message
+from .guardrails import sensitive_fact_confidence_floor
 
 EXTRACTION_SYSTEM_PROMPT = "You extract durable facts about a user from a conversation."
 
@@ -161,7 +162,8 @@ async def _mark_superseded(fact_id: str, metadata: dict, content: str, supersede
 
 
 async def write_fact_with_dedup(user_id: str, candidate: dict, source_session_id: uuid.UUID) -> None:
-    if candidate.get("confidence", 0.0) < settings.fact_confidence_floor:
+    floor = sensitive_fact_confidence_floor(candidate.get("category"))
+    if candidate.get("confidence", 0.0) < floor:
         return
 
     content = candidate["content"]
