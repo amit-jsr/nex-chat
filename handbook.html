@@ -1,0 +1,582 @@
+<title>Chat Handbook — building NxtChat, end to end</title>
+<meta name="description" content="A chronological, decision-by-decision handbook for building a chatbot end to end — from the first streamed reply through the memory system that makes it feel like it remembers you.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F8F7F3;
+  --surface: #FFFFFF;
+  --surface2: #F2F1ED;
+  --border: #E3E1D9;
+  --text: #18170F;
+  --muted: #6A6860;
+  /* Off-white and red — one accent, used sparingly, nothing else. */
+  --accent: #C0421C;
+  --accent-bg: #FAECE7;
+  --accent-text: #712B13;
+  --code-bg: #F4F3EF;
+  --tag-bg: #FAECE7;  --tag-text: #712B13;
+}
+
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.7; }
+
+/* ── Shell — sidebar + content travel together as one centered unit ── */
+.shell { display: flex; max-width: 1180px; margin: 0 auto; align-items: flex-start; }
+
+/* ── Sidebar ── */
+.sidebar { position: sticky; top: 0; flex-shrink: 0; width: 224px; height: 100vh; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; padding: 28px 0 40px; }
+.sidebar-head { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.sidebar-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+.sidebar-title { font-size: 13px; font-weight: 600; }
+.nav-item { display: block; padding: 7px 20px; font-size: 13px; color: var(--muted); text-decoration: none; border-left: 2px solid transparent; transition: all .15s; }
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-bg); font-weight: 500; }
+.nav-num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-right: 6px; }
+
+/* ── Main ── */
+.main { flex: 1; min-width: 0; padding: 52px 48px 100px; }
+.content { max-width: 860px; }
+
+/* ── Page header ── */
+.page-header { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+.page-title { font-size: 32px; font-weight: 600; letter-spacing: -.025em; line-height: 1.15; margin-bottom: 10px; }
+.page-subtitle { font-family: 'Inter', system-ui, sans-serif; font-size: 15px; line-height: 1.7; color: var(--muted); }
+.pill-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.pill-meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); padding-right: 6px; margin-right: 2px; border-right: 1px solid var(--border); }
+.pill { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: var(--tag-bg); color: var(--tag-text); padding: 3px 10px; border-radius: 20px; }
+
+/* ── Topic ── */
+.topic { margin-bottom: 72px; scroll-margin-top: 32px; }
+.topic-header { display: flex; flex-direction: column; gap: 3px; margin-bottom: 22px; }
+.topic-num { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--accent); letter-spacing: .05em; }
+.topic-title { font-size: 19px; font-weight: 600; letter-spacing: -.012em; line-height: 1.3; color: var(--text); }
+.topic-subtitle { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+/* ── Section cards — off-white body, red only on the label text ── */
+.section-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+.section-label { display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--accent); }
+.section-body { padding: 18px 22px 20px; font-size: 14px; line-height: 1.7; background: var(--surface); color: var(--text); }
+.section-body p + p { margin-top: 10px; }
+
+/* ── Concept blocks ── */
+.concept { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-top: 14px; overflow: hidden; }
+.concept-title { font-size: 13px; font-weight: 600; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+.concept-body { padding: 14px 16px; font-size: 14px; line-height: 1.7; color: var(--text); }
+.concept-body p + p { margin-top: 8px; }
+
+/* ── Code block ── */
+.math-block { font-family: 'IBM Plex Mono', monospace; font-size: 13px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 12px 0; color: var(--text); line-height: 1.75; white-space: pre; overflow-x: auto; }
+
+/* ── Bullets ── */
+ul.pts { list-style: none; margin-top: 10px; }
+ul.pts li { padding-left: 16px; position: relative; font-size: 14px; margin-bottom: 6px; line-height: 1.6; }
+ul.pts li::before { content: '→'; position: absolute; left: 0; color: var(--muted); font-size: 12px; top: 2px; }
+
+/* ── Two col ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.mini-card-title { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; color: var(--accent); margin-bottom: 6px; }
+.mini-card-body { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+/* ── Four col grid ── */
+.four-col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+
+/* ── Checkpoint box ── */
+.interview-box { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 0 0 8px 8px; margin-top: 16px; padding: 16px 20px; }
+.interview-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+.interview-q { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.interview-a { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+code { font-family: 'IBM Plex Mono', monospace; font-size: 13px; background: var(--code-bg); padding: 1px 6px; border-radius: 4px; color: var(--accent); }
+
+/* ── Reference table (this content needs one; not in the source stylesheet) ── */
+table.ref { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 12px; }
+table.ref th, table.ref td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+table.ref th { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+table.ref td.num { font-family: 'IBM Plex Mono', monospace; }
+table.ref td.name { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+
+.topic-divider { height: 1px; background: var(--border); margin-bottom: 72px; }
+.footer { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); padding-top: 16px; }
+
+/* ── Justified body text — only where the column is wide enough for it to
+   look deliberate. Narrow columns (mini-cards, especially the four-across
+   eval grid) justify 2-3 words per line, which stretches gaps rather than
+   filling them cleanly, so those stay left-aligned on purpose. ── */
+.content p,
+.callout,
+.interview-a,
+ul.pts li {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+.mini-card,
+.mini-card-body,
+.mini-card ul.pts li {
+  text-align: left;
+  hyphens: none;
+}
+
+/* ── Highlight callout ── */
+.callout { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 12px; font-size: 14px; color: var(--text); line-height: 1.65; }
+.callout strong { color: var(--accent); }
+
+@media (max-width: 760px) {
+  .shell { display: block; }
+  .sidebar { display: none; }
+  .main { padding: 32px 20px 80px; }
+  .page-title { font-size: 24px; }
+  .two-col, .four-col { grid-template-columns: 1fr; }
+  .math-block { font-size: 11.5px; }
+}
+</style>
+
+<div class="shell" lang="en">
+<div class="sidebar">
+  <div class="sidebar-head">
+    <p class="sidebar-eyebrow">Internal docs</p>
+    <p class="sidebar-title">Chat Handbook</p>
+  </div>
+  <a class="nav-item" href="#t1"><span class="nav-num">01</span>Why this is hard</a>
+  <a class="nav-item" href="#t2"><span class="nav-num">02</span>The budgeted window</a>
+  <a class="nav-item" href="#t3"><span class="nav-num">03</span>Rolling summarization</a>
+  <a class="nav-item" href="#t4"><span class="nav-num">04</span>Long-term fact memory</a>
+  <a class="nav-item" href="#t5"><span class="nav-num">05</span>From demo to product</a>
+  <a class="nav-item" href="#t6"><span class="nav-num">06</span>The framework pivot</a>
+  <a class="nav-item" href="#t7"><span class="nav-num">07</span>Wiring up a frontend</a>
+  <a class="nav-item" href="#t8"><span class="nav-num">08</span>Evaluation</a>
+  <a class="nav-item" href="#t9"><span class="nav-num">09</span>Tuning for production</a>
+  <a class="nav-item" href="#appendix">Config reference →</a>
+</div>
+
+<div class="main">
+<div class="content">
+
+  <div class="page-header">
+    <p class="page-subtitle">How to build a chatbot, end to end — told in the order it was actually built. Each chapter is the problem that forced the next one to exist, the code that solved it, and the real numbers and bugs hit along the way.</p>
+    <div class="pill-row">
+      <span class="pill">Python</span>
+      <span class="pill">LangChain</span>
+      <span class="pill">OpenAI</span>
+      <span class="pill">FastAPI</span>
+      <span class="pill">Postgres</span>
+      <span class="pill">pgvector</span>
+    </div>
+  </div>
+
+  <!-- ============ 01 ============ -->
+  <section class="topic" id="t1">
+    <div class="topic-header">
+      <span class="topic-num">01</span>
+      <div>
+        <div class="topic-title">Why this is hard at all</div>
+      </div>
+    </div>
+
+    <div class="section-card card-why">
+      <div class="section-label">The problem</div>
+      <div class="section-body">
+        <p>An LLM API call is stateless. GPT does not remember your last message. Every request must include, as plain text, everything you want it to "know" before it can answer — so "chat memory" isn't memory, it's a re-assembly problem you solve fresh every time.</p>
+        <p>If you could paste in everything, nothing else in this handbook would need to exist. You can't, for three reasons: the model's <strong>context window</strong> is finite (GPT-4o caps around 128k tokens), you're <strong>billed per input token on every call</strong>, and bigger prompts are <strong>slower and worse</strong> — models attend poorly to detail buried in a wall of text.</p>
+      </div>
+    </div>
+
+    <div class="section-card card-exp">
+      <div class="section-label">The starting point</div>
+      <div class="section-body">
+        <p>Build the naive version anyway — you need to feel it break before the next layers make sense.</p>
+        <pre class="math-block">messages = get_all_messages(session_id)   # every message, ever
+response = call_llm(messages)</pre>
+        <p>Get a <code>sessions</code>/<code>messages</code> Postgres schema working, stream the response back over SSE, get session CRUD working. Nothing about memory yet — just prove the loop, and watch it get slower and more expensive as conversations grow.</p>
+      </div>
+    </div>
+
+    <div class="concept">
+      <div class="concept-title">THE ONE NON-NEGOTIABLE RULE</div>
+      <div class="concept-body">
+        <p>Fix this in stone before writing any memory code: <strong>the request path never waits on memory maintenance.</strong> Whatever housekeeping the system needs — summarizing, extracting facts — happens in the background, after the user already has their reply.</p>
+      </div>
+    </div>
+
+    <div class="interview-box">
+      <p class="interview-label">Checkpoint</p>
+      <p class="interview-q">Multi-session streaming chat persists across restarts.</p>
+      <p class="interview-a">No budget, no summary, no facts yet — just the loop, proven end to end.</p>
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ 02 ============ -->
+  <section class="topic" id="t2">
+    <div class="topic-header">
+      <span class="topic-num">02</span>
+      <div><div class="topic-title">The budgeted window</div></div>
+    </div>
+
+    <div class="section-card card-why">
+      <div class="section-label">Why a budget</div>
+      <div class="section-body">
+        <p>The obvious fix for Chapter 1: cap how much history you send. Keep the newest messages, drop the oldest, until you're under budget. This solves cost, latency, and the context-limit ceiling immediately — but if the user said "my name is Amit" at turn 2, by turn 50 the bot has genuinely lost that fact. <strong>A pure sliding window makes the bot amnesiac about anything outside the window.</strong> That gap is what Chapter 3 exists to close.</p>
+      </div>
+    </div>
+
+    <div class="section-card card-exp">
+      <div class="section-label">The mechanism</div>
+      <div class="section-body">
+        <pre class="math-block">def fit_to_budget(messages, budget):
+    kept, tokens_used = [], 0
+    for message in reversed(messages):          # newest -> oldest
+        if tokens_used + message.token_count > budget:
+            break
+        kept.append(message)
+        tokens_used += message.token_count
+    kept.reverse()                               # back to chronological order
+    return kept, tokens_used, len(messages) - len(kept)</pre>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="mini-card">
+        <div class="mini-card-title">Detail that matters</div>
+        <div class="mini-card-body">The <em>new</em> incoming message is never subject to this budget — only prior history competes for it. An oversized paste always goes through in full.</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">Build this now</div>
+        <div class="mini-card-body">A <code>GET /sessions/{id}/memory</code> debug endpoint. Every threshold in every later chapter gets tuned by staring at real numbers through it.</div>
+      </div>
+    </div>
+
+    <div class="interview-box">
+      <p class="interview-label">Checkpoint</p>
+      <p class="interview-q">A 100-turn conversation never exceeds budget, and you can see exactly what was dropped.</p>
+      <p class="interview-a">Config knob introduced: <code>RECENT_BUDGET</code> (default 8000).</p>
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ 03 ============ -->
+  <section class="topic" id="t3">
+    <div class="topic-header">
+      <span class="topic-num">03</span>
+      <div><div class="topic-title">Rolling summarization</div></div>
+    </div>
+
+    <div class="section-card card-why">
+      <div class="section-label">Why compress, not just drop</div>
+      <div class="section-body">
+        <p>Instead of just discarding old messages once they age out of the window, compress them into a running summary and keep that instead — recovering what Chapter 2's window structurally throws away.</p>
+      </div>
+    </div>
+
+    <div class="section-card card-exp">
+      <div class="section-label">How</div>
+      <div class="section-body">
+        <p><strong>Merge incrementally.</strong> Keep one summary row and merge new chunks into it — "rolling" means it rolls forward one chunk at a time instead of recomputing from zero.</p>
+        <p><strong>But merging drifts, so regenerate periodically.</strong> Every <code>regen_every_n_versions</code> compressions (default 5), throw the incremental summary away and regenerate fresh from all the raw compressed messages — possible because raw messages are <strong>never deleted</strong>, just flagged and excluded from the prompt.</p>
+      </div>
+    </div>
+
+    <ul class="pts">
+      <li><strong>Trigger:</strong> uncompressed tokens exceed <code>compress_trigger</code> (0.7) × <code>recent_budget</code>.</li>
+      <li><strong>Exempt:</strong> the most recent <code>keep_verbatim</code> messages (default 8) stay word-for-word.</li>
+      <li><strong>Chunk size:</strong> fold <code>compress_chunk_size</code> (15) messages at a time.</li>
+      <li><strong>Model:</strong> the cheap model (<code>gpt-4o-mini</code>).</li>
+    </ul>
+
+    <div class="callout">
+      <strong>Decision point</strong> — why this runs in the background, full stop. The SSE stream persists the assistant's message and only <em>then</em>, in a <code>finally</code> block, fires the maintenance task via <code>fire_and_forget()</code>. The response is never gated on it — Chapter 1's rule, made real.
+    </div>
+
+    <div class="concept">
+      <div class="concept-title">CONCURRENCY SAFETY</div>
+      <div class="concept-body">
+        <p>A <strong>watermark</strong> (<code>summaries.covers_until_message_id</code>) plus a <strong>version counter</strong>, combined with a per-session row lock (<code>SELECT ... FOR UPDATE SKIP LOCKED</code>). A second concurrent compress job doesn't block and wait — it immediately no-ops, and the next turn retries.</p>
+      </div>
+    </div>
+
+    <div class="interview-box">
+      <p class="interview-label">Checkpoint</p>
+      <p class="interview-q">"What did we discuss at the start?" at turn 80 — answered correctly, from the summary.</p>
+      <p class="interview-a">Config knobs: <code>SUMMARY_BUDGET</code>, <code>COMPRESS_TRIGGER</code>, <code>KEEP_VERBATIM</code>, <code>COMPRESS_CHUNK_SIZE</code>, <code>REGEN_EVERY_N_VERSIONS</code>.</p>
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ 04 ============ -->
+  <section class="topic" id="t4">
+    <div class="topic-header">
+      <span class="topic-num">04</span>
+      <div><div class="topic-title">Long-term fact memory</div></div>
+    </div>
+
+    <div class="section-card card-why">
+      <div class="section-label">Why facts are a different shape</div>
+      <div class="section-body">
+        <p>Chapter 3's summary is scoped to <em>one session</em>. Real personalization needs facts that persist <em>across</em> sessions: "I'm vegetarian," stated in chat #1, should still matter in chat #12. Facts are a different shape of data: many small atomic rows, updated by insert/dedup/supersede rather than incremental merge.</p>
+        <p>A user accumulates hundreds of facts over months, most irrelevant to any given message — so: embed the incoming message, embed every fact once at write time, retrieve only the top-k semantically closest facts above a similarity floor. Textbook <strong>RAG</strong>.</p>
+      </div>
+    </div>
+
+    <div class="section-card card-exp">
+      <div class="section-label">Extraction and the dedup/contradiction bands</div>
+      <div class="section-body">
+        <p>Every 5th assistant turn, a cheap-model call extracts durable facts. On write, search for the closest existing active fact and branch on similarity:</p>
+        <table class="ref">
+          <tr><th>Similarity</th><th>What happens</th></tr>
+          <tr><td class="num">≥ 0.9</td><td>Restatement of something known. Skip.</td></tr>
+          <tr><td class="num">0.75 – 0.9</td><td>Ambiguous — ask an LLM: same, contradiction, or distinct?</td></tr>
+          <tr><td class="num">&lt; 0.75</td><td>Clearly new. Insert directly.</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Bug found</strong> — a miscalibrated threshold, with the numbers to prove it. <code>FACT_SIM_FLOOR</code> was spec'd at 0.55. Measured real cosine similarities for genuinely relevant facts: <strong>0.43–0.53</strong>. 0.55 was accidentally a near-paraphrase-only bar, defeating the point of semantic retrieval. Lowered to <strong>0.35</strong>, the live-verified default. Similarity thresholds can't be spec'd on paper — you calibrate against real embeddings or you ship a retrieval system that silently never retrieves anything.
+    </div>
+
+    <div class="concept">
+      <div class="concept-title">THE CONFIDENCE FLOOR — YOUR HALLUCINATION GUARD</div>
+      <div class="concept-body">
+        <p>Extracted facts are LLM output, not verified truth. <code>fact_confidence_floor</code> (default 0.5) rejects low-confidence extractions before they're ever embedded or written.</p>
+      </div>
+    </div>
+
+    <div class="interview-box">
+      <p class="interview-label">Checkpoint</p>
+      <p class="interview-q">A fact stated in session A surfaces in session B — and doesn't surface when irrelevant.</p>
+      <p class="interview-a">Config knobs: <code>FACT_TOP_K</code>, <code>FACT_SIM_FLOOR</code>, <code>DEDUP_THRESHOLD</code>, <code>FACT_LLM_CHECK_FLOOR</code>, <code>FACT_CONFIDENCE_FLOOR</code>.</p>
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ 05 ============ -->
+  <section class="topic" id="t5">
+    <div class="topic-header">
+      <span class="topic-num">05</span>
+      <div><div class="topic-title">From demo to product</div></div>
+    </div>
+
+    <div class="section-card card-why">
+      <div class="section-label">Why this isn't optional</div>
+      <div class="section-body">
+        <p>Chapters 1–4 give you something that works on the happy path. What follows isn't extra features — it's the difference between "works in my testing" and "works."</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="mini-card">
+        <div class="mini-card-title">Session hygiene</div>
+        <ul class="pts">
+          <li><strong>Ownership scoping</strong> — 404, not 403, on cross-user access.</li>
+          <li><strong>Streaming disconnects</strong> — the reply still persists server-side.</li>
+          <li><strong>Cancel-in-flight</strong> — partial output persists, marked <code>truncated</code>.</li>
+          <li><strong>Pagination</strong> — before the list grows past a page.</li>
+        </ul>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">Memory hygiene</div>
+        <ul class="pts">
+          <li><strong>Isolated failures</strong> — one concern failing never breaks the other.</li>
+          <li><strong>Cascade on deletion</strong> — a defined fate for messages, summary, facts.</li>
+          <li><strong>Oversized message</strong> — solved by Chapter 2's budget rule.</li>
+          <li><strong>Backlog visibility</strong> — "oldest uncompressed age" as a metric.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-card card-exp">
+      <div class="section-label">Rate limiting, cheaply</div>
+      <div class="section-body">
+        <p>An in-memory fixed-window counter keyed by user id, applied only to the two endpoints that call the main chat model. No Redis, resets on restart — fine for a single-process deployment.</p>
+      </div>
+    </div>
+
+    <div class="interview-box">
+      <p class="interview-label">Checkpoint</p>
+      <p class="interview-q">None of the above is a special case you have to remember.</p>
+      <p class="interview-a">It's just how the system behaves, everywhere.</p>
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ 06 ============ -->
+  <section class="topic" id="t6">
+    <div class="topic-header">
+      <span class="topic-num">06</span>
+      <div><div class="topic-title">The framework pivot</div></div>
+    </div>
+
+    <div class="section-card card-why">
+      <div class="section-label">Why adopt one now</div>
+      <div class="section-body">
+        <p>Everything through Chapter 5 was built on raw OpenAI SDK calls, deliberately — so the memory system's mechanics stayed visible. Then came a real decision: adopt LangChain across the platform.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Decision point</strong> — the tradeoff, made explicit before choosing. A thin swap versus a full re-architecture onto LangChain's own memory/vectorstore/chain primitives. The choice made was full re-architecture — with one deliberate carve-out.
+    </div>
+
+    <div class="two-col">
+      <div class="mini-card">
+        <div class="mini-card-title">Moved</div>
+        <div class="mini-card-body">The OpenAI SDK calls, fact storage/similarity search (onto <code>PGVector</code>), and the model-calling leg of summarization/extraction/titling — now real LCEL chains.</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">Deliberately did not move</div>
+        <div class="mini-card-body">Chapter 3's trigger/watermark/lock logic, Chapter 4's threshold bands, Chapter 2's budget. No LangChain memory class supports these exact rules.</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Bug found</strong> — the kind that hides between two storage models. The rewritten contradiction check read a fact's text off a metadata field that never existed — text lives in <code>page_content</code>, not metadata. Silently compared against an empty string until caught by testing the real path end to end.
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ 07 ============ -->
+  <section class="topic" id="t7">
+    <div class="topic-header">
+      <span class="topic-num">07</span>
+      <div><div class="topic-title">Wiring up a frontend</div></div>
+    </div>
+
+    <div class="section-card card-exp">
+      <div class="section-label">Consuming the stream</div>
+      <div class="section-body">
+        <p><code>EventSource</code> can't be used here — it only supports GET. Streaming is a manual SSE frame parser over <code>fetch()</code>, pulled into one shared helper rather than duplicated per call site.</p>
+      </div>
+    </div>
+
+    <div class="section-card card-exp">
+      <div class="section-label">Rendering replies safely</div>
+      <div class="section-body">
+        <p>The model's output is markdown, not plain text — headings, lists, code fences, bold. Render it with a real markdown parser rather than a manual <code>\n</code> → <code>&lt;br&gt;</code> substitution, or every reply shows up littered with literal <code>**</code> and <code>```</code>.</p>
+        <p>That output still goes through <code>innerHTML</code> though, and treating "it's the model's own text" as a reason to skip sanitizing it is exactly the assumption that breaks the day a user pastes something with an embedded HTML tag and asks the model to repeat it back. Run the parsed markdown through a sanitizer before it ever hits the DOM — cheap insurance for one line of code. Vendor both libraries locally rather than pulling them from a CDN at runtime: one less external dependency your chat UI's uptime depends on.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Decision point</strong> — tried twice, reverted twice, before landing. A memory panel docked into the chat sidebar was reworked, reverted, tried again, reverted again — in favor of a fully decoupled memory page. Memory is something you inspect, not something you glance at mid-conversation.
+    </div>
+
+    <div class="concept">
+      <div class="concept-title">A RACE CONDITION WORTH EXPECTING</div>
+      <div class="concept-body">
+        <p>Auto-generated titles run in the same background task as everything else — the frontend can't assume one is ready the moment the stream closes. The fix is a short backoff poll, not making the backend wait.</p>
+      </div>
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ 08 ============ -->
+  <section class="topic" id="t8">
+    <div class="topic-header">
+      <span class="topic-num">08</span>
+      <div><div class="topic-title">Evaluation — proving it works</div></div>
+    </div>
+
+    <div class="section-card card-why">
+      <div class="section-label">Why bother</div>
+      <div class="section-body">
+        <p>Everything in Chapters 3 and 4 is a claim. Claims need a regression test, not a demo you eyeballed once.</p>
+      </div>
+    </div>
+
+    <div class="four-col">
+      <div class="mini-card">
+        <div class="mini-card-title">Recall probe</div>
+        <div class="mini-card-body">Plant a fact early, bury it under enough filler turns to force real compression, then ask for it back. Pass = it's still correct, and the summary's <code>version</code> confirms it came from compression, not the raw window.</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">Update probe</div>
+        <div class="mini-card-body">State a preference, contradict it many turns later, then ask. Pass = the reply reflects the newer statement — confirms Chapter 4's contradiction band actually fires, not just skips as a near-duplicate.</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">Irrelevance probe</div>
+        <div class="mini-card-body">Send a query with no topical overlap to any stored fact. Pass = <code>GET /memory</code>'s <code>injected_facts</code> comes back empty — proves the similarity floor is filtering, not just that nothing matched by luck.</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-card-title">Cost / latency</div>
+        <div class="mini-card-body">Log input tokens per turn from the API response across a 100-turn conversation. Pass = the cost curve plateaus once compression kicks in, instead of growing linearly with history.</div>
+      </div>
+    </div>
+
+    <div class="section-card card-exp">
+      <div class="section-label">How to actually build this</div>
+      <div class="section-body">
+        <p>Run these as a small test suite against your <em>running server</em> over real HTTP, not an in-process test client. The thing you're actually verifying is background-task timing — does the summarizer really finish before you check for it — which only a real request/response round trip exercises honestly. Poll <code>GET /memory</code> with a short backoff after each probe turn rather than assuming the background job is already done.</p>
+        <p>Grade the recall/update/irrelevance probes with a cheap model as judge: ask it a strict yes/no question about whether the reply demonstrates the specific thing you planted, rather than string-matching — exact wording varies, but "does this answer state 45 days" is easy for a model to judge reliably.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Watch for this</strong> — a probe that fires many turns quickly can trip your own rate limiter before it ever reaches the thing it's testing. Either make each filler turn request a longer, more token-dense reply so your compression threshold clears in fewer turns, or explicitly exempt eval traffic from the limit. Budget for the interaction up front rather than debugging a mysterious 429 mid-eval.
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ 09 ============ -->
+  <section class="topic" id="t9">
+    <div class="topic-header">
+      <span class="topic-num">09</span>
+      <div><div class="topic-title">Tuning it for production</div></div>
+    </div>
+
+    <div class="section-card card-why">
+      <div class="section-label">Why the defaults aren't the answer</div>
+      <div class="section-body">
+        <p>Every default in this handbook was picked to make development and testing fast — small enough budgets to trigger compression in a dozen turns instead of a hundred, thresholds calibrated once against a handful of real embeddings. Shipping means deliberately revisiting each one with real usage data, not carrying the development defaults forward by accident.</p>
+      </div>
+    </div>
+
+    <ul class="pts">
+      <li><strong>Size <code>RECENT_BUDGET</code> as a tradeoff, not a guess.</strong> Tokens × price-per-token × turns/day × users is your cost ceiling; how often the rolling summary alone correctly answers a callback question (watch this through <code>/memory</code>) is your quality floor. Start conservative and raise it once Chapter 8's cost probe shows headroom.</li>
+      <li><strong>Run all four eval probes, not just recall.</strong> Chapter 8 gives you the mechanism for update, irrelevance, and cost/latency too — running them once isn't the goal, running them on every threshold change is what keeps the config file tuned instead of just tuned-once.</li>
+      <li><strong>Turn on prompt caching deliberately.</strong> OpenAI's automatic prefix-caching needs a stable prefix turn to turn. Restructure <code>render_system_prompt()</code> so the static persona comes first and the per-turn variable parts — freshly retrieved facts, the rolling summary — are appended after, rather than interleaved. Verify the win with Chapter 8's cost probe rather than assuming the restructure worked.</li>
+      <li><strong>Retire superseded storage on purpose, not by accident.</strong> Any migration that moves data to a new home (Chapter 6's move off a hand-rolled table is one example) leaves the old table behind. Confirm nothing reads or writes it anymore, export it as a backup, then drop it — an indefinitely-kept dead table is its own quiet form of technical debt.</li>
+    </ul>
+
+    <div class="concept">
+      <div class="concept-title">THE ROLLOUT CHECKLIST</div>
+      <div class="concept-body">
+        <p>Before calling this done: all four eval probes pass clean, every budget in the appendix reflects a real cost decision rather than a testing shortcut, and nothing sits in your database because cleanup got deferred. That's the difference between a working prototype and something you'd trust with real users.</p>
+      </div>
+    </div>
+  </section>
+  <div class="topic-divider"></div>
+
+  <!-- ============ Appendix ============ -->
+  <section class="topic" id="appendix">
+    <div class="topic-header">
+      <span class="topic-num">A</span>
+      <div><div class="topic-title">Config reference</div></div>
+    </div>
+
+    <table class="ref">
+      <tr><th>Knob</th><th>Default</th><th>What it controls</th></tr>
+      <tr><td class="name">recent_budget</td><td class="num">8000</td><td>Max tokens of verbatim recent messages per prompt</td></tr>
+      <tr><td class="name">summary_budget</td><td class="num">1500</td><td>Target max tokens for the rolling summary</td></tr>
+      <tr><td class="name">compress_trigger</td><td class="num">0.7</td><td>Compress when uncompressed tokens exceed this × recent_budget</td></tr>
+      <tr><td class="name">keep_verbatim</td><td class="num">8</td><td>Newest N messages never folded into the summary</td></tr>
+      <tr><td class="name">compress_chunk_size</td><td class="num">15</td><td>Messages folded per compression pass</td></tr>
+      <tr><td class="name">regen_every_n_versions</td><td class="num">5</td><td>Regenerate from scratch every N compressions</td></tr>
+      <tr><td class="name">utility_model</td><td class="num">gpt-4o-mini</td><td>Cheap model for summarizing / extracting / judging</td></tr>
+      <tr><td class="name">fact_top_k</td><td class="num">5</td><td>Max facts injected per prompt</td></tr>
+      <tr><td class="name">fact_sim_floor</td><td class="num">0.35</td><td>Minimum similarity for relevance — corrected live from 0.55</td></tr>
+      <tr><td class="name">dedup_threshold</td><td class="num">0.9</td><td>Similarity above which a new fact is a duplicate</td></tr>
+      <tr><td class="name">fact_llm_check_floor</td><td class="num">0.75</td><td>Lower bound of the "ask an LLM" band</td></tr>
+      <tr><td class="name">fact_confidence_floor</td><td class="num">0.5</td><td>Minimum extraction confidence to write a fact</td></tr>
+      <tr><td class="name">rate_limit_max_requests</td><td class="num">10</td><td>Chat requests allowed per window, per user</td></tr>
+      <tr><td class="name">rate_limit_window_seconds</td><td class="num">300</td><td>Length of the rate-limit window</td></tr>
+    </table>
+
+    <div class="footer">Amit Jsr | Chat Handbook | Updated 2026-08-08</div>
+  </section>
+
+</div>
+</div>
+</div>
