@@ -11,6 +11,7 @@ from ..config import settings
 from ..db import async_session, get_db
 from ..llm import stream_chat
 from ..memory.context import build_context
+from ..memory.guardrails import check_moderation
 from ..memory.tasks import fire_and_forget, run_post_response_maintenance
 from ..memory.tokens import estimate_tokens
 from ..models import Message
@@ -67,6 +68,9 @@ async def chat(
     _check_rate_limit(user_id)
     session = await get_owned_session(session_id, user_id, db)
 
+    if await check_moderation(body.message):
+        raise HTTPException(status_code=400, detail="Message flagged by moderation")
+
     # Registered before any I/O (context building calls OpenAI's embedding API and can take a
     # while) so a cancel sent early can't race ahead of this dict entry existing.
     cancel_event = asyncio.Event()
@@ -115,7 +119,10 @@ async def chat(
                         )
                     )
                     await write_db.commit()
-                fire_and_forget(run_post_response_maintenance(session.id, session.user_id))
+                # Flagged replies still get shown (already streamed) but skip maintenance,
+                # so they can't leak forward into the summary or extracted facts.
+                if not await check_moderation(full_text):
+                    fire_and_forget(run_post_response_maintenance(session.id, session.user_id))
                 # Streamed deltas never otherwise reveal the persisted row's id — the frontend
                 # needs it to attach like/dislike feedback to this exact message afterward.
                 yield f"event: message_id\ndata: {new_message_id}\n\n"
@@ -191,7 +198,10 @@ async def regenerate(
                     old = await write_db.get(Message, old_message_id)
                     old.superseded_by = new_message_id
                     await write_db.commit()
-                fire_and_forget(run_post_response_maintenance(session.id, session.user_id))
+                # Flagged replies still get shown (already streamed) but skip maintenance,
+                # so they can't leak forward into the summary or extracted facts.
+                if not await check_moderation(full_text):
+                    fire_and_forget(run_post_response_maintenance(session.id, session.user_id))
                 yield f"event: message_id\ndata: {new_message_id}\n\n"
             if cancelled:
                 yield "event: cancelled\ndata: {}\n\n"

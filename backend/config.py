@@ -37,5 +37,8 @@ class Settings(BaseSettings):
     rate_limit_max_requests: int = 10
     rate_limit_window_seconds: int = 300
 
+    # Guardrails (memory/guardrails.py)
+    sensitive_fact_confidence_floor: float = 0.85
+
 
 settings = Settings()
