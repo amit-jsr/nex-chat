@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NxtChat</title>
+<link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
+<script>
+  (function () {
+    var stored = localStorage.getItem("theme");
+    var theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.dataset.theme = theme;
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;650;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <button class="theme-toggle theme-toggle-fixed" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+    <svg class="icon" id="theme-toggle-icon" viewBox="0 0 24 24"></svg>
+  </button>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <a class="brand" data-view="chat">NxtChat<span class="brand-slash">/</span></a>
+      <button class="btn-primary new-chat-btn" id="new-chat-btn">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New Chat
+      </button>
+
+      <div class="sidebar-search">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="chat-search" placeholder="Search chats" />
+      </div>
+
+      <div class="session-col-header">Recent</div>
+      <div id="session-list" class="list"></div>
+
+      <div class="sidebar-footer">
+        <span class="dot online"></span>
+        <span class="footer-text">Foray Lab. | &copy; 2026</span>
+        <a class="nav-item footer-icon-btn" data-view="memory" title="Memory" aria-label="Memory">
+          <svg class="icon" viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <header class="main-header" id="main-header">
+        <h1 id="main-title">Memory <span class="crumb-sep">/</span> <span class="crumb-sub" id="main-sub">Sessions, memory, and recent activity</span></h1>
+      </header>
+
+      <div class="content">
+
+        <!-- MEMORY VIEW -->
+        <section id="view-memory" class="view" hidden>
+          <div class="stat-row">
+            <div class="stat-card">
+              <div class="stat-label">Total Sessions</div>
+              <div class="stat-value" id="stat-total-sessions">&mdash;</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Active Facts</div>
+              <div class="stat-value" id="stat-active-facts">&mdash;</div>
+            </div>
+          </div>
+
+          <div class="panel session-memory-panel" id="session-memory-panel" hidden>
+            <div class="panel-header">
+              <div class="panel-header-title-group">
+                <h2>Session Memory</h2>
+                <select id="memory-session-select" class="memory-session-select"></select>
+              </div>
+            </div>
+            <div class="session-memory-grid">
+              <div class="memory-block">
+                <div class="memory-block-title">Rolling Summary</div>
+                <p class="memory-summary" id="memory-summary">&mdash;</p>
+              </div>
+
+              <div class="memory-block">
+                <div class="memory-block-title">Token Budget</div>
+                <div class="budget-bar" id="budget-bar"></div>
+                <div class="budget-legend" id="budget-legend"></div>
+              </div>
+
+              <div class="memory-block">
+                <div class="memory-block-title">Injected Facts</div>
+                <div class="fact-pills" id="memory-facts"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2>Memory Snapshot</h2>
+              <span class="panel-sub">Top facts learned across all chats</span>
+            </div>
+            <div class="memory-snapshot" id="dashboard-memory"></div>
+          </div>
+        </section>
+
+        <!-- CHAT VIEW -->
+        <section id="view-chat" class="view">
+          <div class="chat-hero" id="chat-hero">
+            <div class="chat-hero-inner">
+              <svg class="chat-hero-mark" viewBox="0 0 24 24">
+                <defs>
+                  <linearGradient id="heroSparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:var(--accent-light)" />
+                    <stop offset="55%" style="stop-color:var(--accent)" />
+                    <stop offset="100%" style="stop-color:var(--accent-dark)" />
+                  </linearGradient>
+                </defs>
+                <path fill="url(#heroSparkleGrad)" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z"/>
+              </svg>
+              <h1 class="chat-hero-title">What's next, chat?</h1>
+
+              <div class="hero-composer">
+                <div class="composer-box">
+                  <textarea id="hero-input" rows="1" placeholder="How can I help you today?"></textarea>
+                  <div class="composer-actions">
+                    <button class="btn-primary" id="hero-send-btn">
+                      <svg class="icon" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hero-pills">
+                <button class="hero-pill" data-prompt="Let's debug a streaming issue in the /chat endpoint">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="8" y="6" width="8" height="14" rx="4"/><path d="M8 12H4M20 12h-4M9 4l1 2M15 4l-1 2M6 8l-2-1M18 8l2-1M6 16l-2 1M18 16l2 1"/></svg>
+                  Debug
+                </button>
+                <button class="hero-pill" data-prompt="Help me design a new feature for the memory pipeline">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.5 1 2.5h6c0-1 .4-1.9 1-2.5A6 6 0 0 0 12 3Z"/></svg>
+                  Brainstorm
+                </button>
+                <button class="hero-pill" data-prompt="Summarize what we covered in our last session">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+                  Summarize
+                </button>
+                <button class="hero-pill" data-prompt="Explain how the rolling summary and fact memory work together">
+                  <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+                  Explain
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="thread-col" id="chat-thread">
+            <div class="messages" id="messages"></div>
+            <div class="composer">
+              <div class="composer-box">
+                <textarea id="composer-input" rows="1" placeholder="How can I help you today?"></textarea>
+                <div class="composer-actions">
+                  <button class="btn-primary" id="send-btn">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/></svg>
+                    Send
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+<script src="/vendor/marked.min.js"></script>
+<script src="/vendor/purify.min.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
