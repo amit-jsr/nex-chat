@@ -7,7 +7,8 @@ Memory-augmented chat console: a rolling-summary + long-term-fact memory layer o
 ```
 app/        Frontend — static HTML/CSS/JS, no build step
 backend/    Backend — FastAPI + Postgres + OpenAI
-docx/       Planning & progress docs (plan.md, setup.md, frontend_progress.md, backend_progress.md, understanding.md)
+doc/        Architecture diagram (arch-diagram.png) — committed
+            — gitignored, local-only working docs; not present after a fresh clone
 ```
 
 ## Running everything locally
@@ -83,14 +84,6 @@ backend/                     (the importable package — run uvicorn from the re
     └── tasks.py                   fire_and_forget() background task runner
 ```
 
-See `docx/backend_progress.md` for what's still ahead (Phase 5 polish, evals) as it lands.
-
 ## Docs
 
-No single doc has everything — they split between "what to build" and "why/how it works, and what's actually done":
-
-- [`docx/plan.md`](docx/plan.md) — the spec. Exact schema, the context-assembly algorithm, the actual summarization/extraction prompts, full API surface, phase-by-phase build order, edge cases to handle. **Start here if implementing from scratch.**
-- [`docx/understanding.md`](docx/understanding.md) — the necessary companion to `plan.md`, not optional reading. Explains *why* each design decision was made, with real code-line references into this repo. §6 ("If you were rebuilding this from zero, in order") is a naturally-ordered build sequence, not just a spec dump — read this alongside `plan.md`, not after it.
-- [`docx/backend_progress.md`](docx/backend_progress.md) — progress log: what's done, bugs found/fixed, live verification results, what's still open. Useful for picking up this specific implementation where it left off — not a build guide.
-- [`docx/frontend_progress.md`](docx/frontend_progress.md) — same idea, for the frontend.
-- [`docx/setup.md`](docx/setup.md) — local setup commands, smoke test, gotchas. How to *run* the existing code, not what to build.
+`docx/` is gitignored (internal working docs — see `.gitignore`); it won't be present after a fresh clone.

@@ -1,11 +1,11 @@
 :root {
-  /* Warm cream/paper surfaces paired with a monochrome warm-gray accent (matches the
-     favicon mark) — minimal, no color, "serious tool" feel over brand color. */
-  --accent: #43403a;
-  --accent-dark: #302d29;
-  --accent-light: #918d84;
-  --accent-bg: #e5e2db;
-  --accent-text: #3a372f;
+  /* Warm cream/paper surfaces paired with a muted green-teal accent —
+     minimal, low-saturation, "serious tool" feel with a touch of color. */
+  --accent: #2f6f62;
+  --accent-dark: #234f45;
+  --accent-light: #6fa89a;
+  --accent-bg: #dcece7;
+  --accent-text: #1f5045;
   --accent-contrast: #ffffff;
 
   --green-bg: #dcfce7;
@@ -24,7 +24,7 @@
   --gray-text: #83827d;
   --gray-border: #e5e2d9;
 
-  --accent-ring: rgba(67, 64, 58, 0.18);
+  --accent-ring: rgba(47, 111, 98, 0.18);
 
   --bg-page: #faf9f5;
   --bg-card: #fffdf9;
@@ -51,7 +51,7 @@
 
 :root[data-theme="dark"] {
   /* Warm dark charcoal rather than cool blue-black, matching Claude's own dark mode.
-     Accent flips to near-white here so the monochrome scheme still has contrast. */
+     Accent stays near-white here (green-teal is a light-mode-only accent). */
   --accent: #e8e6df;
   --accent-dark: #c9c6ba;
   --accent-light: #f5f4ed;
