@@ -5,10 +5,10 @@
 const API_BASE = "http://localhost:8000";
 
 function getUserId() {
-  let id = localStorage.getItem("nxtchat_user_id");
+  let id = localStorage.getItem("nexchat_user_id");
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem("nxtchat_user_id", id);
+    localStorage.setItem("nexchat_user_id", id);
   }
   return id;
 }

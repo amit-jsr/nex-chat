@@ -1,11 +1,11 @@
 :root {
-  /* Warm cream/paper surfaces paired with a muted green-teal accent —
-     minimal, low-saturation, "serious tool" feel with a touch of color. */
-  --accent: #2f6f62;
-  --accent-dark: #234f45;
-  --accent-light: #6fa89a;
-  --accent-bg: #dcece7;
-  --accent-text: #1f5045;
+  /* Cool paper surfaces paired with an indigo-blue accent — matches
+     NexFlow's palette (same Sora/DM Mono fonts, same radius scale). */
+  --accent: #4656e8;
+  --accent-dark: #3344cf;
+  --accent-light: #8994f0;
+  --accent-bg: #eef0ff;
+  --accent-text: #34419e;
   --accent-contrast: #ffffff;
 
   --green-bg: #dcfce7;
@@ -20,26 +20,26 @@
   --red-text: #dc2626;
   --red-dot: #ef4444;
 
-  --gray-bg: #f0eee6;
-  --gray-text: #83827d;
-  --gray-border: #e5e2d9;
+  --gray-bg: #eef1f6;
+  --gray-text: #6d7484;
+  --gray-border: #e2e5ee;
 
-  --accent-ring: rgba(47, 111, 98, 0.18);
+  --accent-ring: rgba(70, 86, 232, 0.18);
 
-  --bg-page: #faf9f5;
-  --bg-card: #fffdf9;
-  --bg-hover: #f0eee6;
-  --border: rgba(31, 30, 29, 0.08);
-  --text-primary: #1f1e1d;
-  --text-secondary: #44423e;
-  --text-muted: #83827d;
+  --bg-page: #fbfcff;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f3f8;
+  --border: rgba(15, 23, 42, 0.08);
+  --text-primary: #151824;
+  --text-secondary: #3c4252;
+  --text-muted: #6d7484;
 
   --radius: 10px;
   --radius-sm: 6px;
   --radius2: 14px;
 
-  --shadow-xs: 0 1px 2px rgba(31, 30, 29, 0.04);
-  --shadow-sm: 0 1px 3px rgba(31, 30, 29, 0.06), 0 1px 2px rgba(31, 30, 29, 0.04);
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
 
   --ease: 150ms ease;
 
@@ -50,14 +50,14 @@
 }
 
 :root[data-theme="dark"] {
-  /* Warm dark charcoal rather than cool blue-black, matching Claude's own dark mode.
-     Accent stays near-white here (green-teal is a light-mode-only accent). */
-  --accent: #e8e6df;
-  --accent-dark: #c9c6ba;
-  --accent-light: #f5f4ed;
-  --accent-bg: rgba(245, 244, 237, 0.14);
-  --accent-text: #e8e6df;
-  --accent-contrast: #141413;
+  /* Cool indigo-tinted charcoal — dark counterpart to the indigo light
+     theme; NexFlow itself has no dark mode, so this stays this app's own. */
+  --accent: #8b98f5;
+  --accent-dark: #6672d6;
+  --accent-light: #aab3f8;
+  --accent-bg: rgba(139, 152, 245, 0.16);
+  --accent-text: #c3c9fb;
+  --accent-contrast: #ffffff;
 
   --green-bg: rgba(34, 197, 94, 0.16);
   --green-text: #4ade80;
@@ -71,19 +71,19 @@
   --red-text: #f87171;
   --red-dot: #ef4444;
 
-  --gray-bg: #302f2c;
-  --gray-text: #a8a599;
-  --gray-border: rgba(245, 244, 237, 0.12);
+  --gray-bg: #242836;
+  --gray-text: #9198ad;
+  --gray-border: rgba(226, 229, 240, 0.12);
 
-  --accent-ring: rgba(245, 244, 237, 0.3);
+  --accent-ring: rgba(139, 152, 245, 0.3);
 
-  --bg-page: #262624;
-  --bg-card: #30302e;
-  --bg-hover: #3a3936;
-  --border: rgba(245, 244, 237, 0.1);
-  --text-primary: #f5f4ed;
-  --text-secondary: #c9c6ba;
-  --text-muted: #8f8c82;
+  --bg-page: #12141c;
+  --bg-card: #191c26;
+  --bg-hover: #222634;
+  --border: rgba(226, 229, 240, 0.1);
+  --text-primary: #eef0f7;
+  --text-secondary: #c3c7d6;
+  --text-muted: #8a8fa3;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
