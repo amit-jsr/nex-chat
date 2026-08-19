@@ -1,4 +1,4 @@
-# NxtChat
+# NexChat
 
 Memory-augmented chat console: a rolling-summary + long-term-fact memory layer on top of a standard chat UI.
 

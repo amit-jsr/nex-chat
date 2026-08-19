@@ -71,7 +71,7 @@ def _get_contradiction_chain():
     return _contradiction_chain
 
 
-_COLLECTION_NAME = "nxtchat_facts"
+_COLLECTION_NAME = "nexchat_facts"
 _vectorstore: PGVector | None = None
 
 

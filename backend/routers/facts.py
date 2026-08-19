@@ -18,7 +18,7 @@ _LIST_FACTS_SQL = text("""
     SELECT e.id, e.document, e.cmetadata
     FROM langchain_pg_embedding e
     JOIN langchain_pg_collection c ON c.uuid = e.collection_id
-    WHERE c.name = 'nxtchat_facts'
+    WHERE c.name = 'nexchat_facts'
       AND e.cmetadata ->> 'user_id' = :user_id
       AND e.cmetadata ->> 'active' = 'true'
     ORDER BY e.cmetadata ->> 'created_at' DESC
@@ -28,7 +28,7 @@ _DELETE_FACT_SQL = text("""
     DELETE FROM langchain_pg_embedding e
     USING langchain_pg_collection c
     WHERE c.uuid = e.collection_id
-      AND c.name = 'nxtchat_facts'
+      AND c.name = 'nexchat_facts'
       AND e.id = :fact_id
       AND e.cmetadata ->> 'user_id' = :user_id
     RETURNING e.id

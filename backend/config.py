@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=Path(__file__).parent / ".env", extra="ignore")
 
-    database_url: str = "postgresql+asyncpg://nxtchat:nxtchat@localhost:5432/nxtchat"
+    database_url: str = "postgresql+asyncpg://nexchat:nexchat@localhost:5432/nexchat"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o"
     max_response_tokens: int = 2048

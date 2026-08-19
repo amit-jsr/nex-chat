@@ -10,7 +10,7 @@ from ..models import ChatSession, Message, Summary
 from .facts import retrieve_facts
 from .tokens import estimate_tokens
 
-PERSONA = "You are NxtChat, a helpful, concise assistant."
+PERSONA = "You are NexChat, a helpful, concise assistant."
 
 
 @dataclass

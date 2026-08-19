@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="NxtChat API", lifespan=lifespan)
+app = FastAPI(title="NexChat API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
